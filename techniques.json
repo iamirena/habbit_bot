@@ -1,0 +1,82 @@
+[
+  {
+    "id": "do_nothing_10s",
+    "title": "10 секунд ничего не делать",
+    "triggers": ["boredom"],
+    "min_intensity": 1,
+    "max_intensity": 3,
+    "text": "Ничего не делай 10 секунд и спроси себя: что сейчас происходит? Потом решай, брать ли телефон."
+  },
+  {
+    "id": "walk_room",
+    "title": "Пройтись по комнате",
+    "triggers": ["boredom"],
+    "min_intensity": 1,
+    "max_intensity": 5,
+    "text": "Встань и походи по комнате 2-3 минуты, телефон оставь на месте."
+  },
+  {
+    "id": "shake_hands",
+    "title": "Потрясти руками",
+    "triggers": ["boredom"],
+    "min_intensity": 2,
+    "max_intensity": 5,
+    "text": "Потряси кистями и руками 30 секунд."
+  },
+  {
+    "id": "lie_down",
+    "title": "Отдых без телефона",
+    "triggers": ["fatigue"],
+    "min_intensity": 2,
+    "max_intensity": 5,
+    "text": "Ляг, закрой глаза и отдохни 10-15 минут без телефона."
+  },
+  {
+    "id": "feet_weight",
+    "title": "Стопы в пол",
+    "triggers": ["fatigue"],
+    "min_intensity": 1,
+    "max_intensity": 3,
+    "text": "Поставь стопы на пол и почувствуй вес своего тела."
+  },
+  {
+    "id": "water_out",
+    "title": "Вода и выйти из комнаты",
+    "triggers": ["fatigue"],
+    "min_intensity": 1,
+    "max_intensity": 5,
+    "text": "Выпей воды и на несколько минут выйди из комнаты."
+  },
+  {
+    "id": "breathing_hrv",
+    "title": "Дыхание 5-2-5",
+    "triggers": ["stress"],
+    "min_intensity": 1,
+    "max_intensity": 5,
+    "text": "Вдох на 5 секунд, пауза 2, выдох на 5 секунд. Повторяй 3-5 минут."
+  },
+  {
+    "id": "heel_toe",
+    "title": "Перекат пятка-носок",
+    "triggers": ["stress"],
+    "min_intensity": 1,
+    "max_intensity": 3,
+    "text": "Стоя перекатывайся с пятки на носок 1-2 минуты."
+  },
+  {
+    "id": "go_outside",
+    "title": "Выйти на улицу",
+    "triggers": ["stress"],
+    "min_intensity": 3,
+    "max_intensity": 5,
+    "text": "Выйди на улицу на 10 минут."
+  },
+  {
+    "id": "pause_shake",
+    "title": "Пауза и встряхнуться",
+    "triggers": ["boredom", "fatigue", "stress"],
+    "min_intensity": 1,
+    "max_intensity": 5,
+    "text": "Подожди 10 секунд, потряси кистями, а потом реши, брать ли телефон."
+  }
+]
