@@ -1,15 +1,20 @@
 import json
 import random
 from typing import Optional
+from pathlib import Path
 
 from models import Impulse, Technique
 
 EPSILON = 0.2   # доля случайных выборов, чтобы у "просевших" техник был шанс
 
 
-def load_techniques(path: str = "techniques.json") -> list[Technique]:
+def load_techniques(path: str | Path | None = None) -> list[Technique]:
+    if path is None:
+        path = Path(__file__).with_name("techniques.json")
+
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
+
     return [Technique(**item) for item in raw]
 
 

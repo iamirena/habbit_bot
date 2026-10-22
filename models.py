@@ -46,7 +46,7 @@ class Plan:
     budget: int = 100
     used: int = 0
     level: str = "medium"           # "low" / "medium" / "high"
-    overload: bool = True          # обязательные задачи не влезли в бюджет
+    overload: bool = False          # обязательные задачи не влезли в бюджет
 
 
 @dataclass
