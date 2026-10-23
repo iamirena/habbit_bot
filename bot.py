@@ -140,7 +140,9 @@ async def main() -> None:
     db = Database("habit_bot.db")
     db.init_schema()
 
-    bot = Bot(token)
+    proxy = os.getenv("PROXY_URL")
+    session = AiohttpSession(proxy=proxy) if proxy else None
+    bot = Bot(token, session=session)
     dp = Dispatcher(db=db)          # db будет доступна хендлерам как аргумент
     dp.include_router(router)
 

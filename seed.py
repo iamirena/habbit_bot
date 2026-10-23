@@ -71,14 +71,15 @@ def seed(db: Database, user_id: int, techs: list,
 
 
 if __name__ == "__main__":
-    db = Database("demo.db")
+    db = Database("habit_bot.db")
     db.init_schema()
-    uid = db.get_or_create_user(111)
+    uid = db.get_or_create_user(757030906)
 
     if db.get_checkins(uid, 60):
         print("В demo.db уже есть данные. Удали файл demo.db и запусти снова.")
     else:
-        seed(db, uid, load_techniques())
+        yesterday = date.today() - timedelta(days=1)
+        seed(db, uid, load_techniques(), today=yesterday)
         print("Демо-данные за 30 дней созданы.\n")
 
     checkins = db.get_checkins(uid, 30)
