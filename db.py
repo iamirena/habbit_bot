@@ -128,11 +128,13 @@ class Database:
 
     def set_helped(self, impulse_id: int, helped: bool) -> None:
         """Шаг 3: оценка пользователя «помогло / нет»."""
-        self.conn.execute(
+        cur = self.conn.execute(
             "UPDATE impulses SET helped = ? WHERE id = ?",
             (int(helped), impulse_id),
         )
         self.conn.commit()
+        if cur.rowcount == 0:
+            raise ValueError(f"Импульс {impulse_id} не найден")
 
     def get_impulses(self, user_id: int, days: int,
                      today: Optional[date] = None) -> list[Impulse]:
