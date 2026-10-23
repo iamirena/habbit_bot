@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
