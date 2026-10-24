@@ -4,6 +4,14 @@ from models import Plan, Task
 
 BASE_BUDGET = 100
 MIN_BUDGET = 40
+ENERGY_NORM = 6          # энергия от этого значения и выше не снижает бюджет
+ENERGY_PENALTY = 5       # сколько очков теряем за каждый пункт ниже нормы
+STRESS_NORM = 5          # стресс до этого значения не снижает бюджет
+STRESS_PENALTY = 3       # сколько очков теряем за каждый пункт выше нормы
+
+budget = (BASE_BUDGET
+          - ENERGY_PENALTY * max(0, ENERGY_NORM - energy)
+          - STRESS_PENALTY * max(0, stress - STRESS_NORM))
 
 # Шаблонные задачи дня (отдельной таблицы задач в MVP нет)
 DEFAULT_TASKS = [
@@ -23,8 +31,8 @@ def calc_budget(energy: Optional[int], stress: Optional[int]) -> int:
     if energy is None or stress is None:
         return BASE_BUDGET
     budget = (BASE_BUDGET
-              - 5 * max(0, 6 - energy)
-              - 3 * max(0, stress - 5))
+          - ENERGY_PENALTY * max(0, ENERGY_NORM - energy)
+          - STRESS_PENALTY * max(0, stress - STRESS_NORM))
     return max(MIN_BUDGET, budget)
 
 
