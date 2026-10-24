@@ -2,6 +2,8 @@ import asyncio
 import logging
 import os
 from datetime import date
+from duration import parse_duration
+
 
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.session.aiohttp import AiohttpSession
@@ -11,12 +13,14 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (CallbackQuery, InlineKeyboardButton,
                            InlineKeyboardMarkup, KeyboardButton, Message,
                            ReplyKeyboardMarkup)
+from aiogram.exceptions import TelegramUnauthorizedError
+from aiogram.utils.token import TokenValidationError
 
 from analytics import averages, build_insights, top_triggers
 from db import Database
 from models import CheckIn, Impulse, Technique
 from planner import DEFAULT_TASKS, build_plan, format_plan
-from techniques import load_techniques, pick_technique
+from techniques import TechniquesError, load_techniques, pick_technique
 
 STATS_DAYS = 30
 HISTORY_DAYS = 90      # за сколько дней учитываем оценки техник
@@ -186,6 +190,10 @@ async def cmd_plan(message: Message, db: Database) -> None:
 
 
 # ---------- вечерний check-in ----------
+DURATION_EXAMPLES = ("Например: 45 (минуты), 1.5 ч, 2 ч 30 мин или 1:30. "
+                     "Не больше 24 часов.")
+DURATION_PROMPT = "Сколько времени это длилось? " + DURATION_EXAMPLES
+
 @router.message(Command("checkin"))
 @router.message(F.text == BTN_CHECKIN)
 async def start_checkin(message: Message, state: FSMContext) -> None:
@@ -266,23 +274,20 @@ async def checkin_episode(call: CallbackQuery, state: FSMContext,
     else:
         await state.set_state(CheckinForm.minutes)
         await call.message.edit_text("Эпизод: да")
-        await call.message.answer(
-            "Сколько минут это примерно длилось? "
-            "Напиши целое число от 0 до 1440."
-        )
+        await call.message.answer(DURATION_PROMPT)
     await call.answer()
 
 
 @router.message(CheckinForm.minutes)
 async def checkin_minutes(message: Message, state: FSMContext,
                           db: Database) -> None:
-    raw = (message.text or "").strip()
-    if not (raw.isascii() and raw.isdigit()) or not 0 <= int(raw) <= 1440:
-        await message.answer("Нужно целое число от 0 до 1440, например 45. "
-                             "Попробуй ещё раз.")
+    try:
+        minutes = parse_duration(message.text or "")
+    except ValueError:
+        await message.answer("Не получилось понять. " + DURATION_EXAMPLES)
         return
     await save_checkin(message.from_user.id, state, db,
-                       episode=True, minutes=int(raw))
+                       episode=True, minutes=minutes)
     await message.answer(CHECKIN_DONE)
 
 
@@ -353,30 +358,45 @@ async def impulse_helped(call: CallbackQuery, db: Database) -> None:
         )
     await call.answer()
 
-
+def read_token() -> str:
+    """Токен из BOT_TOKEN без пробелов и кавычек по краям."""
+    return os.getenv("BOT_TOKEN", "").strip().strip("\"'")
 # ---------- запуск ----------
 async def main() -> None:
     logging.basicConfig(level=logging.INFO)
 
-    token = os.getenv("BOT_TOKEN")
+    token = read_token()
     if not token:
-        raise SystemExit("Не задана переменная окружения BOT_TOKEN")
+        raise SystemExit("Не задан токен. Выполните: "
+                         "set BOT_TOKEN=токен_от_BotFather")
 
-    db = Database("habit_bot.db")
-    db.init_schema()
-    techs = load_techniques()
+    try:
+        techs = load_techniques()
+    except TechniquesError as e:
+        raise SystemExit(f"Ошибка файла техник: {e}")
 
     proxy = os.getenv("PROXY_URL")
     session = AiohttpSession(proxy=proxy) if proxy else None
-    bot = Bot(token, session=session)
+    try:
+        bot = Bot(token, session=session)
+    except TokenValidationError:
+        raise SystemExit("Токен выглядит неверно. Он должен быть вида "
+                         "123456789:AAH... Скопируйте его у @BotFather "
+                         "целиком, без пробелов и кавычек.")
 
-    dp = Dispatcher(db=db, techs=techs)   # доступны хендлерам по имени
+    db = Database("habit_bot.db")
+    db.init_schema()
+    dp = Dispatcher(db=db, techs=techs)
     dp.include_router(router)
 
     try:
         await dp.start_polling(bot)
+    except TelegramUnauthorizedError:
+        raise SystemExit("Telegram не принял токен. Проверьте, что он "
+                         "актуален (возможно, его перевыпустили через /revoke).")
     finally:
         db.close()
+        await bot.session.close()
         await bot.session.close()
 
 
