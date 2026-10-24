@@ -194,6 +194,7 @@ DURATION_EXAMPLES = ("Например: 45 (минуты), 1.5 ч, 2 ч 30 ми�
                      "Не больше 24 часов.")
 DURATION_PROMPT = "Сколько времени это длилось? " + DURATION_EXAMPLES
 
+
 @router.message(Command("checkin"))
 @router.message(F.text == BTN_CHECKIN)
 async def start_checkin(message: Message, state: FSMContext) -> None:
@@ -358,10 +359,12 @@ async def impulse_helped(call: CallbackQuery, db: Database) -> None:
         )
     await call.answer()
 
+# ---------- запуск ----------
 def read_token() -> str:
     """Токен из BOT_TOKEN без пробелов и кавычек по краям."""
     return os.getenv("BOT_TOKEN", "").strip().strip("\"'")
-# ---------- запуск ----------
+
+
 async def main() -> None:
     logging.basicConfig(level=logging.INFO)
 
@@ -396,7 +399,6 @@ async def main() -> None:
                          "актуален (возможно, его перевыпустили через /revoke).")
     finally:
         db.close()
-        await bot.session.close()
         await bot.session.close()
 
 
