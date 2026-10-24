@@ -8,14 +8,30 @@ from models import Impulse, Technique
 EPSILON = 0.2   # доля случайных выборов, чтобы у "просевших" техник был шанс
 
 
+class TechniquesError(Exception):
+    """Файл техник не найден, повреждён или имеет неверный формат."""
+
+
 def load_techniques(path: str | Path | None = None) -> list[Technique]:
     if path is None:
         path = Path(__file__).with_name("techniques.json")
 
-    with open(path, encoding="utf-8") as f:
-        raw = json.load(f)
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = json.load(f)
+    except FileNotFoundError as e:
+        raise TechniquesError(f"Файл техник не найден: {path}") from e
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        raise TechniquesError(f"Файл техник повреждён: {path} ({e})") from e
+    except OSError as e:
+        raise TechniquesError(f"Не удалось прочитать файл техник {path}: {e}") from e
 
-    return [Technique(**item) for item in raw]
+    if not isinstance(raw, list):
+        raise TechniquesError(f"{path}: ожидается список техник")
+    try:
+        return [Technique(**item) for item in raw]
+    except TypeError as e:
+        raise TechniquesError(f"{path}: неверный формат техники ({e})") from e
 
 
 def helped_rate(technique_id: str, impulses: list[Impulse]) -> float:

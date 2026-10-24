@@ -34,7 +34,12 @@ CREATE TABLE IF NOT EXISTS impulses (
     helped       INTEGER CHECK (helped IN (0, 1))       -- NULL, пока нет оценки
 );
 """
-
+def _since_iso(days: int, today: Optional[date]) -> str:
+    """Первая дата окна [today-(days-1), today] в ISO-формате."""
+    if days < 1:
+        raise ValueError("days должно быть не меньше 1")
+    today = today or date.today()
+    return (today - timedelta(days=days - 1)).isoformat()
 
 class Database:
     def __init__(self, path: str = "habit_bot.db"):
@@ -86,8 +91,7 @@ class Database:
     def get_checkins(self, user_id: int, days: int,
                      today: Optional[date] = None) -> list[CheckIn]:
         """Check-in'ы за последние `days` дней, от старых к новым."""
-        today = today or date.today()
-        since = (today - timedelta(days=days - 1)).isoformat()
+        since = _since_iso(days, today)
         rows = self.conn.execute(
             """
             SELECT date, mood, energy, stress, episode, episode_minutes
@@ -138,8 +142,7 @@ class Database:
 
     def get_impulses(self, user_id: int, days: int,
                      today: Optional[date] = None) -> list[Impulse]:
-        today = today or date.today()
-        since = (today - timedelta(days=days - 1)).isoformat()
+        since = _since_iso(days, today)
         rows = self.conn.execute(
             """
             SELECT id, date, trigger, intensity, technique_id, helped
