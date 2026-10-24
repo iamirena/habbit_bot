@@ -1,6 +1,7 @@
 import random
 from datetime import date, timedelta
 from typing import Optional
+import argparse
 
 from analytics import averages, build_insights, top_triggers
 from db import Database
@@ -71,19 +72,39 @@ def seed(db: Database, user_id: int, techs: list,
 
 
 if __name__ == "__main__":
-    db = Database("habit_bot.db")
-    db.init_schema()
-    uid = db.get_or_create_user(757030906)
+    DEFAULT_DB = "habit_bot.db"
+DEFAULT_DAYS = 30
+CHECKS_WINDOW_DAYS = 365      # за сколько дней ищем уже существующие данные
 
-    if db.get_checkins(uid, 60):
-        print("В demo.db уже есть данные. Удали файл demo.db и запусти снова.")
-    else:
-        yesterday = date.today() - timedelta(days=1)
-        seed(db, uid, load_techniques(), today=yesterday)
-        print("Демо-данные за 30 дней созданы.\n")
 
-    checkins = db.get_checkins(uid, 30)
-    impulses = db.get_impulses(uid, 30)
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Заполнить базу демо-данными (по вчерашний день включительно)."
+    )
+    parser.add_argument(
+        "telegram_id", type=int,
+        help="числовой Telegram ID пользователя (его показывает @userinfobot)",
+    )
+    parser.add_argument(
+        "--db", default=DEFAULT_DB,
+        help=f"файл базы данных (по умолчанию {DEFAULT_DB})",
+    )
+    parser.add_argument(
+        "--days", type=int, default=DEFAULT_DAYS,
+        help=f"сколько дней истории создать (по умолчанию {DEFAULT_DAYS})",
+    )
+    args = parser.parse_args()
+    if args.days < 1:
+        parser.error("--days должно быть не меньше 1")
+    return args
+
+
+def print_report(db: Database, user_id: int) -> None:
+    checkins = db.get_checkins(user_id, DEFAULT_DAYS)
+    impulses = db.get_impulses(user_id, DEFAULT_DAYS)
+    if not checkins:
+        print("За последние 30 дней записей нет.")
+        return
 
     print("Средние:", averages(checkins))
     print("Топ триггеров:", top_triggers(impulses))
@@ -94,4 +115,28 @@ if __name__ == "__main__":
     last = checkins[-1]
     print("\nПлан по последнему check-in'у:")
     print(format_plan(build_plan(DEFAULT_TASKS, last.energy, last.stress)))
-    db.close()
+
+
+def main() -> None:
+    args = parse_args()
+    db = Database(args.db)
+    try:
+        db.init_schema()
+        user_id = db.get_or_create_user(args.telegram_id)
+
+        if db.get_checkins(user_id, CHECKS_WINDOW_DAYS):
+            print(f"В {args.db} у этого пользователя уже есть данные. "
+                  f"Удали файл {args.db} и запусти снова.\n")
+        else:
+            yesterday = date.today() - timedelta(days=1)
+            seed(db, user_id, load_techniques(),
+                 days=args.days, today=yesterday)
+            print(f"Демо-данные созданы: {args.days} дн. по вчерашний день.\n")
+
+        print_report(db, user_id)
+    finally:
+        db.close()
+
+
+if __name__ == "__main__":
+    main()
