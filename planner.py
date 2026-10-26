@@ -4,14 +4,14 @@ from models import Plan, Task
 
 BASE_BUDGET = 100
 MIN_BUDGET = 40
-ENERGY_NORM = 6          # энергия от этого значения и выше не снижает бюджет
-ENERGY_PENALTY = 5       # сколько очков теряем за каждый пункт ниже нормы
-STRESS_NORM = 5          # стресс до этого значения не снижает бюджет
-STRESS_PENALTY = 3       # сколько очков теряем за каждый пункт выше нормы
 
-budget = (BASE_BUDGET
-          - ENERGY_PENALTY * max(0, ENERGY_NORM - energy)
-          - STRESS_PENALTY * max(0, stress - STRESS_NORM))
+ENERGY_NORM = 6          # энергия от этого значения и выше не снижает бюджет
+ENERGY_PENALTY = 5       # очков минус за каждый пункт энергии ниже нормы
+STRESS_NORM = 5          # стресс до этого значения не снижает бюджет
+STRESS_PENALTY = 3       # очков минус за каждый пункт стресса выше нормы
+
+HIGH_LOAD_RATIO = 0.8    # использовано от бюджета: «высокий» уровень
+MEDIUM_LOAD_RATIO = 0.5  # использовано от бюджета: «средний» уровень
 
 # Шаблонные задачи дня (отдельной таблицы задач в MVP нет)
 DEFAULT_TASKS = [
@@ -31,16 +31,16 @@ def calc_budget(energy: Optional[int], stress: Optional[int]) -> int:
     if energy is None or stress is None:
         return BASE_BUDGET
     budget = (BASE_BUDGET
-          - ENERGY_PENALTY * max(0, ENERGY_NORM - energy)
-          - STRESS_PENALTY * max(0, stress - STRESS_NORM))
+              - ENERGY_PENALTY * max(0, ENERGY_NORM - energy)
+              - STRESS_PENALTY * max(0, stress - STRESS_NORM))
     return max(MIN_BUDGET, budget)
 
 
 def _level(used: int, budget: int, overload: bool) -> str:
     ratio = used / budget
-    if overload or ratio >= 0.8:
+    if overload or ratio >= HIGH_LOAD_RATIO:
         return "high"
-    if ratio >= 0.5:
+    if ratio >= MEDIUM_LOAD_RATIO:
         return "medium"
     return "low"
 
